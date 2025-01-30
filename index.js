@@ -28,7 +28,9 @@ async function executeStorefrontScript(script) {
   await page.close();
   return result;
 }
-
+app.get('/', (req, res) => {
+  res.send('Cannot get /');
+})
 // ✅ API: Add Product to Cart
 app.post("/cart/product/add", async (req, res) => {
   const { id, quantity } = req.body;
