@@ -11,16 +11,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-let browser; // Global browser for local development
+let browser;
 
-/**
- * Returns a Puppeteer browser instance.
- * - On Vercel (AWS environment), launches a new browser per request.
- * - Locally, reuses a global browser instance.
- */
+// For serverless, launch a new browser per request; locally, reuse a global instance.
 async function getBrowser() {
   if (process.env.AWS_REGION) {
-    // Running in serverless (Vercel/AWS Lambda): Launch a new browser for each request.
     return await puppeteer.launch({
       executablePath: await chromium.executablePath,
       headless: "new",
@@ -28,7 +23,6 @@ async function getBrowser() {
       defaultViewport: chromium.defaultViewport,
     });
   } else {
-    // Running locally: Reuse a global browser.
     if (!browser) {
       browser = await puppeteer.launch({
         headless: "new",
@@ -39,14 +33,8 @@ async function getBrowser() {
   }
 }
 
-/**
- * Executes the storefront script using Puppeteer.
- * Launches a new page, navigates to the storefront, waits for the Ecwid API,
- * executes the provided action, and then closes the page.
- */
 async function executeStorefrontScript(data) {
   console.log("Received Data:", data);
-  // Get the appropriate browser instance.
   const localBrowser = await getBrowser();
   let page;
   try {
@@ -103,7 +91,6 @@ async function executeStorefrontScript(data) {
     }, data);
 
     await page.close();
-    // If running in serverless, close the browser after processing.
     if (process.env.AWS_REGION) {
       await localBrowser.close();
     }
@@ -117,8 +104,6 @@ async function executeStorefrontScript(data) {
     throw new Error("Failed to execute script.");
   }
 }
-
-// ✅ API Routes
 
 app.post("/cart/product/add", async (req, res) => {
   try {
@@ -172,7 +157,6 @@ app.get("/", (req, res) => {
   res.send("✅ Ecwid Storefront API is running.");
 });
 
-// Start Express server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
