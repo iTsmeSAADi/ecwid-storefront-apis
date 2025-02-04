@@ -1,8 +1,9 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer");
 const chromium = require("chrome-aws-lambda");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const dotenv = require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,24 +16,24 @@ let browser;
 // ✅ Start Puppeteer Browser
 async function startBrowser() {
   try {
-    if (!browser) {
-      if (process.env.AWS_REGION) {
-        // ✅ Running on Vercel (AWS Lambda environment)
-        browser = await puppeteer.launch({
-          executablePath: await chromium.executablePath,
-          headless: chromium.headless,
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-        });
-      } else {
-        // ✅ Running locally (use Puppeteer's built-in Chromium)
-        browser = await puppeteer.launch({
-          headless: true,
-          args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        });
-      }
-      console.log("✅ Puppeteer started.");
+    let browser;
+    if (process.env.AWS_REGION) {
+      // ✅ Running on Vercel (AWS Lambda-compatible Chrome)
+      browser = await puppeteer.launch({
+        executablePath: await chromium.executablePath,
+        headless: true,
+        args: chromium.args,
+        ignoreDefaultArgs: ["--disable-extensions"],
+      });
+    } else {
+      // ✅ Running locally (use Puppeteer's built-in Chromium)
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
     }
+    console.log("✅ Puppeteer started.");
+    return browser;
   } catch (error) {
     console.error("❌ Error launching Puppeteer:", error);
   }
