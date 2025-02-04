@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer");
 const chromium = require("chrome-aws-lambda");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const dotenv = require("dotenv").config();
+require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,39 +11,48 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-let browser;
+let browser; // Global browser instance
 
 // ✅ Start Puppeteer Browser
 async function startBrowser() {
   try {
-    let browser;
+    // Do not declare a new local variable—assign to the global one.
     if (process.env.AWS_REGION) {
       // ✅ Running on Vercel (AWS Lambda-compatible Chrome)
       browser = await puppeteer.launch({
         executablePath: await chromium.executablePath,
-        headless: true,
+        headless: "new", // Use the new headless mode
         args: chromium.args,
         ignoreDefaultArgs: ["--disable-extensions"],
       });
     } else {
       // ✅ Running locally (use Puppeteer's built-in Chromium)
       browser = await puppeteer.launch({
-        headless: true,
+        headless: "new", // Use the new headless mode to avoid deprecation warnings
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
     }
     console.log("✅ Puppeteer started.");
-    return browser;
   } catch (error) {
     console.error("❌ Error launching Puppeteer:", error);
   }
+  return browser;
 }
+
+// Immediately start the browser.
 startBrowser();
 
 // ✅ Function to Execute in Storefront Console
 async function executeStorefrontScript(data) {
   console.log("Received Data:", data);
-  if (!browser) await startBrowser();
+  
+  // If browser is not initialized, wait for it to start
+  if (!browser) {
+    await startBrowser();
+    if (!browser) {
+      throw new Error("Browser failed to start");
+    }
+  }
 
   let page;
   try {
@@ -114,6 +123,8 @@ async function executeStorefrontScript(data) {
 }
 
 // ✅ API Routes
+
+// Add product to cart
 app.post("/cart/product/add", async (req, res) => {
   try {
     const result = await executeStorefrontScript(req.body);
@@ -123,6 +134,7 @@ app.post("/cart/product/add", async (req, res) => {
   }
 });
 
+// Get cart
 app.get("/cart", async (req, res) => {
   try {
     const cart = await executeStorefrontScript({ action: "getCart" });
@@ -132,6 +144,7 @@ app.get("/cart", async (req, res) => {
   }
 });
 
+// Remove product from cart
 app.post("/cart/product/remove", async (req, res) => {
   try {
     const result = await executeStorefrontScript({
@@ -144,6 +157,7 @@ app.post("/cart/product/remove", async (req, res) => {
   }
 });
 
+// Clear cart
 app.post("/cart/clear", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "clearCart" });
@@ -153,6 +167,7 @@ app.post("/cart/clear", async (req, res) => {
   }
 });
 
+// Checkout
 app.post("/checkout", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "checkout" });
@@ -167,6 +182,7 @@ app.get("/", (req, res) => {
   res.send("✅ Ecwid Storefront API is running.");
 });
 
+// Start Express server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
