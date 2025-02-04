@@ -1,7 +1,7 @@
-# Use an official Node image based on Debian Buster (which has apt-get)
+# Use an official Node.js image based on Debian Buster (or Bullseye) for a smaller footprint
 FROM node:16-buster-slim
 
-# Install required dependencies for Chromium
+# Install dependencies required by Chromium
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -29,11 +29,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copy the rest of the application
+# Copy the rest of the application code
 COPY . .
 
-# Expose the port that your app uses
+# Expose the port your app runs on
 EXPOSE 3000
 
-# Run your app
+# Start your app
 CMD ["node", "index.js"]
