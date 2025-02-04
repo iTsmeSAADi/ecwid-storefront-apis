@@ -16,7 +16,7 @@ async function startBrowser() {
   if (!browser) {
     try {
       browser = await puppeteer.launch({
-        headless: true, // Change to false for debugging
+        headless: "new", // Ensures compatibility
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
       });
       console.log("✅ Puppeteer started.");
@@ -29,7 +29,7 @@ startBrowser();
 
 // Function to run JavaScript in the storefront console
 async function executeStorefrontScript(data) {
-  console.log('data', data)
+  console.log("Executing script with data:", data);
   if (!browser) await startBrowser();
 
   let page;
@@ -39,7 +39,6 @@ async function executeStorefrontScript(data) {
 
     await page.waitForFunction(() => window.Ecwid && window.Ecwid.Cart, { timeout: 7000 });
 
-    // Execute JavaScript on the page
     const result = await page.evaluate((data) => {
       return new Promise((resolve, reject) => {
         if (!window.Ecwid || !window.Ecwid.Cart) {
@@ -47,23 +46,14 @@ async function executeStorefrontScript(data) {
         }
 
         if (data.action === "getCart") {
-          console.log("entered getCart action");
-
           Ecwid.Cart.get((cart) => resolve(cart));
-        } 
-        else if (data.action === "removeProduct") {
-          console.log("entered removeProduct action");
-        
+        } else if (data.action === "removeProduct") {
           Ecwid.Cart.removeProduct(data.index, () => {
-            Ecwid.Cart.get((updatedCart) => {
-              resolve({ success: true, message: "Product removed", updatedCart });
-            });
+            Ecwid.Cart.get((updatedCart) => resolve({ success: true, message: "Product removed", updatedCart }));
           });
-        }         
-        else if (data.action === "clearCart") {
+        } else if (data.action === "clearCart") {
           Ecwid.Cart.clear(() => resolve({ success: true, message: "Cart cleared" }));
-        } 
-        else if (data.action === "checkout") {
+        } else if (data.action === "checkout") {
           Ecwid.Cart.get((cart) => {
             if (cart.items.length === 0) {
               reject("Cart is empty");
@@ -72,21 +62,19 @@ async function executeStorefrontScript(data) {
               resolve({ success: true, message: "Checkout opened" });
             }
           });
-        } 
-        else if (data.id) {
+        } else if (data.id) {
           // Default action: Add product to cart
           let product = {
             id: Number(data.id),
             quantity: Number(data.quantity),
             options: data.options || {},
             recurringChargeSettings: { recurringInterval: "month", recurringIntervalCount: 1 },
-            callback: function(success, product, cart) {
+            callback: function (success, product, cart) {
               resolve({ success, addedProduct: product, updatedCart: cart });
             }
           };
           Ecwid.Cart.addProduct(product);
-        } 
-        else {
+        } else {
           reject("Invalid action");
         }
       });
@@ -107,7 +95,6 @@ app.post("/cart/product/add", async (req, res) => {
 
   try {
     const result = await executeStorefrontScript({ id, quantity, options });
-
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -118,7 +105,6 @@ app.post("/cart/product/add", async (req, res) => {
 app.get("/cart", async (req, res) => {
   try {
     const cart = await executeStorefrontScript({ action: "getCart" });
-
     res.json({ success: true, cart });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -129,7 +115,7 @@ app.get("/cart", async (req, res) => {
 app.post("/cart/product/remove", async (req, res) => {
   const { index } = req.body;
   try {
-    console.log('Removing product at index:', index);
+    console.log("Removing product at index:", index);
     const result = await executeStorefrontScript({ action: "removeProduct", index });
 
     res.json({ success: true, result });
@@ -143,7 +129,6 @@ app.post("/cart/product/remove", async (req, res) => {
 app.post("/cart/clear", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "clearCart" });
-
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -154,7 +139,6 @@ app.post("/cart/clear", async (req, res) => {
 app.post("/checkout", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "checkout" });
-
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
