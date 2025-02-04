@@ -11,52 +11,46 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-let browser; // Global browser instance
+let browser; // Global browser for local development
 
-// ✅ Start Puppeteer Browser
-async function startBrowser() {
-  try {
-    // Do not declare a new local variable—assign to the global one.
-    if (process.env.AWS_REGION) {
-      // ✅ Running on Vercel (AWS Lambda-compatible Chrome)
+/**
+ * Returns a Puppeteer browser instance.
+ * - On Vercel (AWS environment), launches a new browser per request.
+ * - Locally, reuses a global browser instance.
+ */
+async function getBrowser() {
+  if (process.env.AWS_REGION) {
+    // Running in serverless (Vercel/AWS Lambda): Launch a new browser for each request.
+    return await puppeteer.launch({
+      executablePath: await chromium.executablePath,
+      headless: "new",
+      args: [...chromium.args, "--disable-dev-shm-usage"],
+      defaultViewport: chromium.defaultViewport,
+    });
+  } else {
+    // Running locally: Reuse a global browser.
+    if (!browser) {
       browser = await puppeteer.launch({
-        executablePath: await chromium.executablePath,
-        headless: "new", // Use the new headless mode
-        args: chromium.args,
-        ignoreDefaultArgs: ["--disable-extensions"],
-      });
-    } else {
-      // ✅ Running locally (use Puppeteer's built-in Chromium)
-      browser = await puppeteer.launch({
-        headless: "new", // Use the new headless mode to avoid deprecation warnings
+        headless: "new",
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
     }
-    console.log("✅ Puppeteer started.");
-  } catch (error) {
-    console.error("❌ Error launching Puppeteer:", error);
+    return browser;
   }
-  return browser;
 }
 
-// Immediately start the browser.
-startBrowser();
-
-// ✅ Function to Execute in Storefront Console
+/**
+ * Executes the storefront script using Puppeteer.
+ * Launches a new page, navigates to the storefront, waits for the Ecwid API,
+ * executes the provided action, and then closes the page.
+ */
 async function executeStorefrontScript(data) {
   console.log("Received Data:", data);
-  
-  // If browser is not initialized, wait for it to start
-  if (!browser) {
-    await startBrowser();
-    if (!browser) {
-      throw new Error("Browser failed to start");
-    }
-  }
-
+  // Get the appropriate browser instance.
+  const localBrowser = await getBrowser();
   let page;
   try {
-    page = await browser.newPage();
+    page = await localBrowser.newPage();
     await page.goto("https://ecwid-storefront.vercel.app/", {
       waitUntil: "domcontentloaded",
     });
@@ -74,19 +68,16 @@ async function executeStorefrontScript(data) {
         if (data.action === "getCart") {
           console.log("Fetching cart data...");
           Ecwid.Cart.get((cart) => resolve(cart));
-        } 
-        else if (data.action === "removeProduct") {
+        } else if (data.action === "removeProduct") {
           console.log("Removing product...");
           Ecwid.Cart.removeProduct(data.index, () => {
             Ecwid.Cart.get((updatedCart) => {
               resolve({ success: true, message: "Product removed", updatedCart });
             });
           });
-        } 
-        else if (data.action === "clearCart") {
+        } else if (data.action === "clearCart") {
           Ecwid.Cart.clear(() => resolve({ success: true, message: "Cart cleared" }));
-        } 
-        else if (data.action === "checkout") {
+        } else if (data.action === "checkout") {
           Ecwid.Cart.get((cart) => {
             if (cart.items.length === 0) {
               reject("Cart is empty");
@@ -95,8 +86,7 @@ async function executeStorefrontScript(data) {
               resolve({ success: true, message: "Checkout opened" });
             }
           });
-        } 
-        else if (data.id) {
+        } else if (data.id) {
           let product = {
             id: Number(data.id),
             quantity: Number(data.quantity),
@@ -106,17 +96,23 @@ async function executeStorefrontScript(data) {
             },
           };
           Ecwid.Cart.addProduct(product);
-        } 
-        else {
+        } else {
           reject("Invalid action");
         }
       });
     }, data);
 
     await page.close();
+    // If running in serverless, close the browser after processing.
+    if (process.env.AWS_REGION) {
+      await localBrowser.close();
+    }
     return result;
   } catch (error) {
     if (page) await page.close();
+    if (process.env.AWS_REGION && localBrowser) {
+      await localBrowser.close();
+    }
     console.error("❌ Puppeteer execution error:", error);
     throw new Error("Failed to execute script.");
   }
@@ -124,7 +120,6 @@ async function executeStorefrontScript(data) {
 
 // ✅ API Routes
 
-// Add product to cart
 app.post("/cart/product/add", async (req, res) => {
   try {
     const result = await executeStorefrontScript(req.body);
@@ -134,7 +129,6 @@ app.post("/cart/product/add", async (req, res) => {
   }
 });
 
-// Get cart
 app.get("/cart", async (req, res) => {
   try {
     const cart = await executeStorefrontScript({ action: "getCart" });
@@ -144,7 +138,6 @@ app.get("/cart", async (req, res) => {
   }
 });
 
-// Remove product from cart
 app.post("/cart/product/remove", async (req, res) => {
   try {
     const result = await executeStorefrontScript({
@@ -157,7 +150,6 @@ app.post("/cart/product/remove", async (req, res) => {
   }
 });
 
-// Clear cart
 app.post("/cart/clear", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "clearCart" });
@@ -167,7 +159,6 @@ app.post("/cart/clear", async (req, res) => {
   }
 });
 
-// Checkout
 app.post("/checkout", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "checkout" });
@@ -177,7 +168,6 @@ app.post("/checkout", async (req, res) => {
   }
 });
 
-// Server status check
 app.get("/", (req, res) => {
   res.send("✅ Ecwid Storefront API is running.");
 });
