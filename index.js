@@ -11,12 +11,23 @@ app.use(bodyParser.json());
 
 let browser;
 
+// Get the correct Chrome path (for local & Vercel)
+async function getExecutablePath() {
+  if (process.env.VERCEL) {
+    return "/usr/bin/google-chrome-stable"; // Path for Vercel
+  } else {
+    return puppeteer.executablePath(); // Local Puppeteer path
+  }
+}
+
 // Start Puppeteer
 async function startBrowser() {
   if (!browser) {
     try {
+      const executablePath = await getExecutablePath();
       browser = await puppeteer.launch({
-        headless: "new", // Ensures compatibility
+        headless: "new",
+        executablePath,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
       });
       console.log("✅ Puppeteer started.");
@@ -27,7 +38,7 @@ async function startBrowser() {
 }
 startBrowser();
 
-// Function to run JavaScript in the storefront console
+// Function to execute JavaScript inside storefront
 async function executeStorefrontScript(data) {
   console.log("Executing script with data:", data);
   if (!browser) await startBrowser();
@@ -47,13 +58,16 @@ async function executeStorefrontScript(data) {
 
         if (data.action === "getCart") {
           Ecwid.Cart.get((cart) => resolve(cart));
-        } else if (data.action === "removeProduct") {
+        } 
+        else if (data.action === "removeProduct") {
           Ecwid.Cart.removeProduct(data.index, () => {
             Ecwid.Cart.get((updatedCart) => resolve({ success: true, message: "Product removed", updatedCart }));
           });
-        } else if (data.action === "clearCart") {
+        } 
+        else if (data.action === "clearCart") {
           Ecwid.Cart.clear(() => resolve({ success: true, message: "Cart cleared" }));
-        } else if (data.action === "checkout") {
+        } 
+        else if (data.action === "checkout") {
           Ecwid.Cart.get((cart) => {
             if (cart.items.length === 0) {
               reject("Cart is empty");
@@ -62,8 +76,8 @@ async function executeStorefrontScript(data) {
               resolve({ success: true, message: "Checkout opened" });
             }
           });
-        } else if (data.id) {
-          // Default action: Add product to cart
+        } 
+        else if (data.id) {
           let product = {
             id: Number(data.id),
             quantity: Number(data.quantity),
@@ -74,7 +88,8 @@ async function executeStorefrontScript(data) {
             }
           };
           Ecwid.Cart.addProduct(product);
-        } else {
+        } 
+        else {
           reject("Invalid action");
         }
       });
@@ -95,6 +110,7 @@ app.post("/cart/product/add", async (req, res) => {
 
   try {
     const result = await executeStorefrontScript({ id, quantity, options });
+
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -105,6 +121,7 @@ app.post("/cart/product/add", async (req, res) => {
 app.get("/cart", async (req, res) => {
   try {
     const cart = await executeStorefrontScript({ action: "getCart" });
+
     res.json({ success: true, cart });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -129,6 +146,7 @@ app.post("/cart/product/remove", async (req, res) => {
 app.post("/cart/clear", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "clearCart" });
+
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -139,6 +157,7 @@ app.post("/cart/clear", async (req, res) => {
 app.post("/checkout", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "checkout" });
+
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
