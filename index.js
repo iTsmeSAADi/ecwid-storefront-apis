@@ -1,5 +1,3 @@
-// api/index.js
-
 const express = require("express");
 const puppeteer = require("puppeteer");
 const chromium = require("chrome-aws-lambda");
@@ -9,7 +7,7 @@ require("dotenv").config();
 const serverless = require("serverless-http");
 
 const app = express();
-const PORT = process.env.PORT || 3000; // Not used in serverless mode, but helpful for local testing.
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -18,19 +16,23 @@ let browser;
 
 // For serverless, launch a new browser per request; locally, reuse a global instance.
 async function getBrowser() {
+  const startTime = Date.now();
   if (process.env.AWS_REGION) {
-    return await puppeteer.launch({
+    const browserInstance = await puppeteer.launch({
       executablePath: await chromium.executablePath,
       headless: "new",
       args: [...chromium.args, "--disable-dev-shm-usage"],
       defaultViewport: chromium.defaultViewport,
     });
+    console.log(`Browser launched in serverless mode in ${Date.now() - startTime} ms`);
+    return browserInstance;
   } else {
     if (!browser) {
       browser = await puppeteer.launch({
         headless: "new",
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
+      console.log(`Browser launched locally in ${Date.now() - startTime} ms`);
     }
     return browser;
   }
@@ -38,17 +40,22 @@ async function getBrowser() {
 
 async function executeStorefrontScript(data) {
   console.log("Received Data:", data);
+  const t0 = Date.now();
   const localBrowser = await getBrowser();
   let page;
   try {
     page = await localBrowser.newPage();
+    console.log("New page opened in", Date.now() - t0, "ms");
+    
     await page.goto("https://ecwid-storefront.vercel.app/", {
       waitUntil: "domcontentloaded",
     });
-
+    console.log("Page loaded in", Date.now() - t0, "ms");
+    
     await page.waitForFunction(() => window.Ecwid && window.Ecwid.Cart, {
       timeout: 7000,
     });
+    console.log("Wait for function complete in", Date.now() - t0, "ms");
 
     const result = await page.evaluate((data) => {
       return new Promise((resolve, reject) => {
@@ -93,8 +100,12 @@ async function executeStorefrontScript(data) {
     }, data);
 
     await page.close();
+    console.log("Page closed. Total elapsed:", Date.now() - t0, "ms");
+
     if (process.env.AWS_REGION) {
+      // For serverless mode, close the browser after processing to free resources.
       await localBrowser.close();
+      console.log("Browser closed (serverless).");
     }
     return result;
   } catch (error) {
@@ -159,5 +170,12 @@ app.get("/", (req, res) => {
   res.send("✅ Ecwid Storefront API is running.");
 });
 
-// Export the Express app wrapped with serverless-http
+// For local testing, if this file is run directly, start listening.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+// Export the app wrapped in serverless-http for Vercel.
 module.exports = serverless(app);

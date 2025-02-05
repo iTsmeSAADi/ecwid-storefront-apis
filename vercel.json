@@ -1,5 +1,11 @@
 {
     "version": 2,
+    "functions": {
+      "index.js": {
+        "maxDuration": 15,
+        "memory": 1024
+      }
+    },
     "builds": [
       {
         "src": "index.js",
