@@ -1,15 +1,16 @@
 {
   "dependencies": {
     "body-parser": "^1.20.3",
-    "chrome-aws-lambda": "^9.1.0",
+    "chrome-aws-lambda": "6",
     "cors": "^2.8.5",
     "ecwid-storefront-apis": "file:",
     "express": "^4.21.2",
-    "puppeteer-core": "^9.1.0",
+    "puppeteer-core": "6",
     "vercel": "^40.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "puppeteer": "^24.2.0"
   },
   "name": "ecwid-storefront-apis",
   "version": "1.0.0",
