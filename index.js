@@ -3,9 +3,9 @@ const puppeteer = require("puppeteer-core");
 const chromium = require("chrome-aws-lambda");
 
 
+
 const cors = require("cors");
 const bodyParser = require("body-parser");
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,19 +20,24 @@ async function startBrowser() {
   if (!browser) {
     try {
       console.log("🔄 Launching Puppeteer...");
+
+      // Check if running on Vercel or local environment
+      const executablePath = process.env.VERCEL ? await chromium.executablePath : "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Local Chrome path on Windows
+
       browser = await puppeteer.launch({
-        executablePath: process.platform === "win32"
-          ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-          : "/usr/bin/google-chrome-stable", // For Vercel
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        executablePath,
+        headless: process.env.VERCEL ? chromium.headless : true,  // Use headless mode when on Vercel
+        args: process.env.VERCEL ? chromium.args : ["--no-sandbox"],  // Use args from chrome-aws-lambda on Vercel
+        defaultViewport: process.env.VERCEL ? chromium.defaultViewport : { width: 1280, height: 800 }, // Set viewport size for local and serverless environments
       });
+
       console.log("✅ Puppeteer launched successfully.");
     } catch (error) {
       console.error("❌ Error launching Puppeteer:", error);
     }
   }
 }
+
 
 
 startBrowser();
@@ -111,7 +116,6 @@ async function executeStorefrontScript(data) {
     throw new Error("Failed to execute script.");
   }
 }
-
 
 // ===================== ADD TO CART =====================
 app.post("/cart/product/add", async (req, res) => {
