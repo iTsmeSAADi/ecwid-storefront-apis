@@ -1,6 +1,6 @@
 const express = require("express");
 const puppeteer = require("puppeteer-core");
-const chromium = require("chrome-aws-lambda");
+const chromium = require("@sparticuz/chromium");
 
 
 const cors = require("cors");
@@ -13,22 +13,20 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
+
 let browser;
 
-// Start Puppeteer
 async function startBrowser() {
   if (!browser) {
     try {
-      const isVercel = process.env.AWS_REGION; // Checks if running on Vercel
-
       browser = await puppeteer.launch({
-        executablePath: isVercel
-          ? await chromium.executablePath // Use chrome-aws-lambda on Vercel
-          : "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", // Use local Chrome for development
-        headless: true,
-        args: isVercel ? chromium.args : [],
+        args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        ignoreHTTPSErrors: true
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
       });
 
       console.log("✅ Puppeteer started.");
@@ -37,6 +35,9 @@ async function startBrowser() {
     }
   }
 }
+
+module.exports = { startBrowser };
+
 
 
 
