@@ -1,5 +1,5 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer");
 const chromium = require("chrome-aws-lambda");
 
 
@@ -22,12 +22,7 @@ async function startBrowser() {
       console.log("🔄 Launching Puppeteer...");
       
       browser = await puppeteer.launch({
-        executablePath:
-          process.platform === "win32"
-            ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-            : process.env.VERCEL
-            ? undefined // Use bundled Chromium on Vercel
-            : "/usr/bin/google-chrome-stable", 
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined, // Let Puppeteer find its own path
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });

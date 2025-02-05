@@ -11,5 +11,11 @@
             "src": "/(.*)",
             "dest": "/index.js"
         }
-    ]
+    ],
+    "build": {
+        "env": {
+            "PUPPETEER_SKIP_DOWNLOAD": "false",
+            "PUPPETEER_EXECUTABLE_PATH": ""
+        }
+    }
 }
