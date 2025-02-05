@@ -2,6 +2,8 @@ const express = require("express");
 const puppeteer = require("puppeteer-core");
 const chromium = require("chrome-aws-lambda");
 
+
+
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
@@ -19,16 +21,14 @@ async function startBrowser() {
     try {
       console.log("🔄 Launching Puppeteer...");
 
-      // Use chrome-aws-lambda's Chromium executable in Vercel environment
-      const executablePath = process.env.AWS_LAMBDA_FUNCTION_VERSION
-        ? await chromium.executablePath
-        : null;
+      // Check if running on Vercel or local environment
+      const executablePath = process.env.AWS_LAMBDA_FUNCTION_VERSION ? await chromium.executablePath : "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Local Chrome path on Windows
 
       browser = await puppeteer.launch({
         executablePath,
-        headless: true, // Headless is true for serverless environments
-        args: chromium.args, // Use arguments provided by chrome-aws-lambda
-        defaultViewport: chromium.defaultViewport, // Use default viewport size from chrome-aws-lambda
+        headless: true, // Use headless mode when on Vercel process.env.AWS_LAMBDA_FUNCTION_VERSION ? chromium.headless : true, 
+        args: process.env.AWS_LAMBDA_FUNCTION_VERSION ? chromium.args : ["--no-sandbox"],  // Use args from chrome-aws-lambda on Vercel
+        defaultViewport: process.env.AWS_LAMBDA_FUNCTION_VERSION ? chromium.defaultViewport : { width: 1280, height: 800 }, // Set viewport size for local and serverless environments
         ignoreHTTPSErrors: true
       });
 
@@ -38,6 +38,10 @@ async function startBrowser() {
     }
   }
 }
+
+
+
+startBrowser();
 
 // Function to run JavaScript in the storefront console
 async function executeStorefrontScript(data) {
