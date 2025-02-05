@@ -20,19 +20,25 @@ async function startBrowser() {
   if (!browser) {
     try {
       console.log("🔄 Launching Puppeteer...");
+      
       browser = await puppeteer.launch({
-        executablePath: process.platform === "win32"
-          ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-          : "/usr/bin/google-chrome-stable", // For Vercel
+        executablePath:
+          process.platform === "win32"
+            ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+            : process.env.VERCEL
+            ? undefined // Use bundled Chromium on Vercel
+            : "/usr/bin/google-chrome-stable", 
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
+
       console.log("✅ Puppeteer launched successfully.");
     } catch (error) {
       console.error("❌ Error launching Puppeteer:", error);
     }
   }
 }
+
 
 
 startBrowser();
