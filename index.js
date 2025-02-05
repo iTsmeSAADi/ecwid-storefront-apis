@@ -1,9 +1,11 @@
 const express = require("express");
+const puppeteer = require("puppeteer-core");
+const chromium = require("chrome-aws-lambda");
+
+
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium");
-const serverless = require("serverless-http");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,23 +15,29 @@ app.use(bodyParser.json());
 
 let browser;
 
+// Start Puppeteer
 async function startBrowser() {
   if (!browser) {
     try {
+      console.log("🔄 Launching Puppeteer...");
       browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
+        executablePath: process.platform === "win32"
+          ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          : "/usr/bin/google-chrome-stable", // For Vercel
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
-      console.log("✅ Puppeteer started.");
+      console.log("✅ Puppeteer launched successfully.");
     } catch (error) {
       console.error("❌ Error launching Puppeteer:", error);
     }
   }
 }
 
+
+startBrowser();
+
+// Function to run JavaScript in the storefront console
 async function executeStorefrontScript(data) {
   console.log("📌 Received data:", data);
   if (!browser) await startBrowser();
@@ -45,6 +53,7 @@ async function executeStorefrontScript(data) {
     await page.waitForFunction(() => window.Ecwid && window.Ecwid.Cart, { timeout: 7000 });
     console.log("✅ Ecwid API detected.");
 
+    // Execute JavaScript on the page
     const result = await page.evaluate((data) => {
       console.log("📌 Running action inside page:", data.action);
       
@@ -103,31 +112,38 @@ async function executeStorefrontScript(data) {
   }
 }
 
+
+// ===================== ADD TO CART =====================
 app.post("/cart/product/add", async (req, res) => {
   const { id, quantity, options } = req.body;
 
   try {
     const result = await executeStorefrontScript({ id, quantity, options });
+
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// ===================== GET CART =====================
 app.get("/cart", async (req, res) => {
   try {
     const cart = await executeStorefrontScript({ action: "getCart" });
+
     res.json({ success: true, cart });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// ===================== REMOVE PRODUCT FROM CART =====================
 app.post("/cart/product/remove", async (req, res) => {
   const { index } = req.body;
   try {
     console.log('Removing product at index:', index);
     const result = await executeStorefrontScript({ action: "removeProduct", index });
+
     res.json({ success: true, result });
   } catch (error) {
     console.error("Error removing product:", error.message);
@@ -135,27 +151,33 @@ app.post("/cart/product/remove", async (req, res) => {
   }
 });
 
+// ===================== CLEAR CART =====================
 app.post("/cart/clear", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "clearCart" });
+
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// ===================== CHECKOUT =====================
 app.post("/checkout", async (req, res) => {
   try {
     const result = await executeStorefrontScript({ action: "checkout" });
+
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// ===================== SERVER START =====================
 app.get("/", (req, res) => {
   res.send("Welcome to the Ecwid Storefront API");
 });
 
-// Wrap express app for serverless
-module.exports.handler = serverless(app);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
