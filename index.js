@@ -2,6 +2,8 @@ const express = require("express");
 const puppeteer = require("puppeteer");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const chromium = require("chrome-aws-lambda");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,15 +16,16 @@ let browser;
 // Start Puppeteer
 async function startBrowser() {
   if (!browser) {
-    try {
-      browser = await puppeteer.launch({
-        headless: true, // Change to false for debugging
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
-      });
-      console.log("✅ Puppeteer started.");
-    } catch (error) {
-      console.error("❌ Error launching Puppeteer:", error);
-    }
+      try {
+          browser = await puppeteer.launch({
+              executablePath: await chromium.executablePath,
+              headless: true,
+              args: chromium.args,
+          });
+          console.log("✅ Puppeteer started.");
+      } catch (error) {
+          console.error("❌ Error launching Puppeteer:", error);
+      }
   }
 }
 startBrowser();
