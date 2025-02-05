@@ -3,15 +3,10 @@
     "functions": {
       "index.js": {
         "maxDuration": 15,
-        "memory": 1024
+        "memory": 1024,
+        "runtime": "nodejs18.x"
       }
     },
-    "builds": [
-      {
-        "src": "index.js",
-        "use": "@vercel/node"
-      }
-    ],
     "routes": [
       {
         "src": "/(.*)",
