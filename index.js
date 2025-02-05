@@ -18,49 +18,54 @@ let browser;
 // Start Puppeteer
 async function startBrowser() {
   if (!browser) {
-      try {
-          browser = await puppeteer.launch({
-              executablePath: process.platform === "win32"
-                  ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" // Windows path
-                  : await chromium.executablePath, // Vercel/Linux path
-              headless: true,
-              args: chromium.args,
-          });
-          console.log("✅ Puppeteer started.");
-      } catch (error) {
-          console.error("❌ Error launching Puppeteer:", error);
-      }
+    try {
+      console.log("🔄 Launching Puppeteer...");
+      browser = await puppeteer.launch({
+        executablePath: process.platform === "win32"
+          ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          : "/usr/bin/google-chrome-stable", // For Vercel
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+      console.log("✅ Puppeteer launched successfully.");
+    } catch (error) {
+      console.error("❌ Error launching Puppeteer:", error);
+    }
   }
 }
+
+
 startBrowser();
 
 // Function to run JavaScript in the storefront console
 async function executeStorefrontScript(data) {
-  console.log('data', data)
+  console.log("📌 Received data:", data);
   if (!browser) await startBrowser();
 
   let page;
   try {
     page = await browser.newPage();
+    console.log("✅ New page created.");
+
     await page.goto("https://ecwid-storefront.vercel.app/", { waitUntil: "domcontentloaded" });
+    console.log("✅ Navigated to Ecwid storefront.");
 
     await page.waitForFunction(() => window.Ecwid && window.Ecwid.Cart, { timeout: 7000 });
+    console.log("✅ Ecwid API detected.");
 
     // Execute JavaScript on the page
     const result = await page.evaluate((data) => {
+      console.log("📌 Running action inside page:", data.action);
+      
       return new Promise((resolve, reject) => {
         if (!window.Ecwid || !window.Ecwid.Cart) {
           return reject("Ecwid API not loaded");
         }
 
         if (data.action === "getCart") {
-          console.log("entered getCart action");
-
           Ecwid.Cart.get((cart) => resolve(cart));
         } 
         else if (data.action === "removeProduct") {
-          console.log("entered removeProduct action");
-        
           Ecwid.Cart.removeProduct(data.index, () => {
             Ecwid.Cart.get((updatedCart) => {
               resolve({ success: true, message: "Product removed", updatedCart });
@@ -81,12 +86,10 @@ async function executeStorefrontScript(data) {
           });
         } 
         else if (data.id) {
-          // Default action: Add product to cart
           let product = {
             id: Number(data.id),
             quantity: Number(data.quantity),
             options: data.options || {},
-            recurringChargeSettings: { recurringInterval: "month", recurringIntervalCount: 1 },
             callback: function(success, product, cart) {
               resolve({ success, addedProduct: product, updatedCart: cart });
             }
@@ -99,14 +102,16 @@ async function executeStorefrontScript(data) {
       });
     }, data);
 
+    console.log("✅ Script executed successfully.");
     await page.close();
     return result;
   } catch (error) {
-    if (page) await page.close();
     console.error("❌ Puppeteer execution error:", error);
+    if (page) await page.close();
     throw new Error("Failed to execute script.");
   }
 }
+
 
 // ===================== ADD TO CART =====================
 app.post("/cart/product/add", async (req, res) => {
