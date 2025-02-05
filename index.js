@@ -1,12 +1,15 @@
+// api/index.js
+
 const express = require("express");
 const puppeteer = require("puppeteer");
 const chromium = require("chrome-aws-lambda");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 require("dotenv").config();
+const serverless = require("serverless-http");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Not used in serverless mode, but helpful for local testing.
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -52,7 +55,6 @@ async function executeStorefrontScript(data) {
         if (!window.Ecwid || !window.Ecwid.Cart) {
           return reject("Ecwid API not loaded");
         }
-
         if (data.action === "getCart") {
           console.log("Fetching cart data...");
           Ecwid.Cart.get((cart) => resolve(cart));
@@ -157,6 +159,5 @@ app.get("/", (req, res) => {
   res.send("✅ Ecwid Storefront API is running.");
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+// Export the Express app wrapped with serverless-http
+module.exports = serverless(app);
