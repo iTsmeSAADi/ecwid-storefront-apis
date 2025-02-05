@@ -1,6 +1,8 @@
 const express = require("express");
 const puppeteer = require("puppeteer-core");
 const chromium = require("chrome-aws-lambda");
+
+
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
@@ -18,7 +20,9 @@ async function startBrowser() {
   if (!browser) {
       try {
           browser = await puppeteer.launch({
-              executablePath: await chromium.executablePath,
+              executablePath: process.platform === "win32"
+                  ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" // Windows path
+                  : await chromium.executablePath, // Vercel/Linux path
               headless: true,
               args: chromium.args,
           });
