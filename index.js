@@ -1,6 +1,4 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium");
 
 
 const cors = require("cors");
@@ -16,6 +14,9 @@ app.use(bodyParser.json());
 const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 
+
+
+
 let browser;
 
 async function startBrowser() {
@@ -24,7 +25,7 @@ async function startBrowser() {
       browser = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
+        executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',  // for Chrome
         headless: chromium.headless,
         ignoreHTTPSErrors: true,
       });
@@ -35,6 +36,9 @@ async function startBrowser() {
     }
   }
 }
+
+
+
 
 module.exports = { startBrowser };
 
@@ -59,10 +63,9 @@ async function executeStorefrontScript(data) {
     await page.waitForFunction(() => window.Ecwid && window.Ecwid.Cart, { timeout: 7000 });
     console.log("✅ Ecwid API detected.");
 
-    // Execute JavaScript on the page
     const result = await page.evaluate((data) => {
       console.log("📌 Running action inside page:", data.action);
-      
+
       return new Promise((resolve, reject) => {
         if (!window.Ecwid || !window.Ecwid.Cart) {
           return reject("Ecwid API not loaded");
@@ -70,18 +73,15 @@ async function executeStorefrontScript(data) {
 
         if (data.action === "getCart") {
           Ecwid.Cart.get((cart) => resolve(cart));
-        } 
-        else if (data.action === "removeProduct") {
+        } else if (data.action === "removeProduct") {
           Ecwid.Cart.removeProduct(data.index, () => {
             Ecwid.Cart.get((updatedCart) => {
               resolve({ success: true, message: "Product removed", updatedCart });
             });
           });
-        }         
-        else if (data.action === "clearCart") {
+        } else if (data.action === "clearCart") {
           Ecwid.Cart.clear(() => resolve({ success: true, message: "Cart cleared" }));
-        } 
-        else if (data.action === "checkout") {
+        } else if (data.action === "checkout") {
           Ecwid.Cart.get((cart) => {
             if (cart.items.length === 0) {
               reject("Cart is empty");
@@ -90,8 +90,7 @@ async function executeStorefrontScript(data) {
               resolve({ success: true, message: "Checkout opened" });
             }
           });
-        } 
-        else if (data.id) {
+        } else if (data.id) {
           let product = {
             id: Number(data.id),
             quantity: Number(data.quantity),
@@ -101,22 +100,25 @@ async function executeStorefrontScript(data) {
             }
           };
           Ecwid.Cart.addProduct(product);
-        } 
-        else {
+        } else {
           reject("Invalid action");
         }
       });
     }, data);
 
     console.log("✅ Script executed successfully.");
-    await page.close();
     return result;
   } catch (error) {
     console.error("❌ Puppeteer execution error:", error);
-    if (page) await page.close();
     throw new Error("Failed to execute script.");
+  } finally {
+    if (page) {
+      await page.close();
+      console.log("✅ Page closed.");
+    }
   }
 }
+
 
 
 // ===================== ADD TO CART =====================
