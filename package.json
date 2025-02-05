@@ -1,23 +1,24 @@
 {
-  "name": "ecwid-storefront-apis",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
   "dependencies": {
     "body-parser": "^1.20.3",
-    "chrome-aws-lambda": "^10.1.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
     "ecwid-storefront-apis": "file:",
     "express": "^4.21.2",
-    "puppeteer": "^19.0.0",
-    "serverless-http": "^3.2.0",
+    "puppeteer": "^24.1.1",
     "vercel": "^40.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
-  }
+  },
+  "name": "ecwid-storefront-apis",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "dev": "nodemon index"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
