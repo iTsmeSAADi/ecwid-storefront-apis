@@ -12,10 +12,8 @@
             "dest": "/index.js"
         }
     ],
-    "build": {
-        "env": {
-            "PUPPETEER_SKIP_DOWNLOAD": "false",
-            "PUPPETEER_EXECUTABLE_PATH": ""
-        }
+    "env": {
+        "PUPPETEER_SKIP_DOWNLOAD": "false",
+        "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium-browser"
     }
 }
