@@ -21,15 +21,14 @@ async function startBrowser() {
     try {
       console.log("🔄 Launching Puppeteer...");
 
-      // Check if running on Vercel or local environment
-      const executablePath = process.env.AWS_LAMBDA_FUNCTION_VERSION ? await chromium.executablePath : "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Local Chrome path on Windows
+      const puppeteer = require("puppeteer-core"); // Use puppeteer-core
+      const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // CHANGE THIS if needed!
 
       browser = await puppeteer.launch({
         executablePath,
-        headless: true, // Use headless mode when on Vercel process.env.AWS_LAMBDA_FUNCTION_VERSION ? chromium.headless : true, 
-        args: process.env.AWS_LAMBDA_FUNCTION_VERSION ? chromium.args : ["--no-sandbox"],  // Use args from chrome-aws-lambda on Vercel
-        defaultViewport: process.env.AWS_LAMBDA_FUNCTION_VERSION ? chromium.defaultViewport : { width: 1280, height: 800 }, // Set viewport size for local and serverless environments
-        ignoreHTTPSErrors: true
+        headless: "new",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        ignoreHTTPSErrors: true,
       });
 
       console.log("✅ Puppeteer launched successfully.");
@@ -38,6 +37,8 @@ async function startBrowser() {
     }
   }
 }
+
+
 
 
 
