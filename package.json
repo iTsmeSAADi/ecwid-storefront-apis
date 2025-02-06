@@ -6,6 +6,7 @@
     "cors": "^2.8.5",
     "ecwid-storefront-apis": "file:",
     "express": "^4.18.2",
+    "playwright-aws-lambda": "^0.11.0",
     "playwright-core": "^1.50.1",
     "puppeteer-core": "^10.4.0",
     "vercel": "^40.1.0"
@@ -19,7 +20,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "dev": "nodemon index"
+    "dev": "nodemon index",
+    "postinstall": "npx playwright install chromium"
   },
   "keywords": [],
   "author": "",
