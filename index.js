@@ -16,23 +16,22 @@ app.use(bodyParser.json());
 let browser;
 
 // Start Puppeteer
+
 async function startBrowser() {
   if (!browser) {
     try {
       console.log("🔄 Launching Puppeteer...");
 
+      const isServerless = !!process.env.VERCEL_ENV || !!process.env.NOW_REGION || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+      
       let executablePath;
       let puppeteerArgs = ["--no-sandbox", "--disable-setuid-sandbox"];
 
-      // Detect if running in a serverless environment
-      const isServerless = process.env.NOW_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL_ENV;
-
       if (isServerless) {
-        const chromium = require("chrome-aws-lambda");
         executablePath = await chromium.executablePath;
-        puppeteerArgs.push("--disable-dev-shm-usage");
+        puppeteerArgs.push("--single-process"); // Fixes ETXTBSY error
       } else {
-        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Change for local development
+        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Local Dev
       }
 
       browser = await puppeteer.launch({
@@ -45,14 +44,11 @@ async function startBrowser() {
       console.log("✅ Puppeteer launched successfully.");
     } catch (error) {
       console.error("❌ Error launching Puppeteer:", error);
+      browser = null; // Ensure we reset if it fails
     }
   }
+  return browser;
 }
-
-
-
-
-
 
 
 startBrowser();
