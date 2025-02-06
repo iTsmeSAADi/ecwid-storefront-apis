@@ -1,9 +1,5 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");
-const chromium = require("chrome-aws-lambda");
-
-
-
+const { chromium } = require('playwright');
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
@@ -15,40 +11,30 @@ app.use(bodyParser.json());
 
 let browser;
 
-// Start Puppeteer
+// Start Playwright browser
 
 async function startBrowser() {
   if (!browser) {
     try {
-      console.log("🔄 Launching Puppeteer...");
+      console.log("🔄 Launching Playwright...");
 
       const isServerless = !!process.env.VERCEL_ENV || !!process.env.NOW_REGION || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-      let executablePath;
-      let puppeteerArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"];
+      
+      let puppeteerArgs = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
 
-      if (isServerless) {
-        executablePath = await chromium.executablePath;
-        puppeteerArgs.push("--single-process");
-      } else {
-        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-      }
-
-      browser = await puppeteer.launch({
-        executablePath,
+      browser = await chromium.launch({
         headless: true,
         args: puppeteerArgs,
-        ignoreHTTPSErrors: true,
       });
 
-      console.log("✅ Puppeteer launched successfully.");
+      console.log("✅ Playwright launched successfully.");
     } catch (error) {
-      console.error("❌ Error launching Puppeteer:", error);
-      browser = null; 
+      console.error("❌ Error launching Playwright:", error);
+      browser = null;
     }
   }
   return browser;
 }
-
 
 startBrowser();
 
@@ -68,7 +54,6 @@ async function executeStorefrontScript(data) {
     await page.waitForFunction(() => window.Ecwid && window.Ecwid.Cart, { timeout: 7000 });
     console.log("✅ Ecwid API detected.");
 
-    // Execute JavaScript on the page
     const result = await page.evaluate((data) => {
       console.log("📌 Running action inside page:", data.action);
       
@@ -121,7 +106,7 @@ async function executeStorefrontScript(data) {
     await page.close();
     return result;
   } catch (error) {
-    console.error("❌ Puppeteer execution error:", error);
+    console.error("❌ Playwright execution error:", error);
     if (page) await page.close();
     throw new Error("Failed to execute script.");
   }
