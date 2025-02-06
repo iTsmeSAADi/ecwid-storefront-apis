@@ -1,18 +1,13 @@
 {
-  "builds": [
-    {
-      "src": "index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "env": {
-    "PLAYWRIGHT_BROWSERS_PATH": "/tmp/playwright"
-  },
   "functions": {
-    "api/*": {
+    "index.js": {
+      "runtime": "nodejs16.x",
       "memory": 1024,
       "maxDuration": 15
     }
+  },
+  "env": {
+    "PLAYWRIGHT_BROWSERS_PATH": "/tmp/playwright"
   },
   "routes": [
     {
