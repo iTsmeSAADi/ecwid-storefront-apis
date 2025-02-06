@@ -5,6 +5,12 @@
       "use": "@vercel/node"
     }
   ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.js"
+    }
+  ],
   "env": {
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "true" 
   }
