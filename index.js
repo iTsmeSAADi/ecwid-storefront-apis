@@ -24,17 +24,20 @@ async function startBrowser() {
       let executablePath;
       let puppeteerArgs = ["--no-sandbox", "--disable-setuid-sandbox"];
 
-      if (process.env.VERCEL) {
+      // Detect if running in a serverless environment
+      const isServerless = process.env.NOW_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL_ENV;
+
+      if (isServerless) {
         const chromium = require("chrome-aws-lambda");
         executablePath = await chromium.executablePath;
         puppeteerArgs.push("--disable-dev-shm-usage");
       } else {
-        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Change if needed
+        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Change for local development
       }
 
       browser = await puppeteer.launch({
         executablePath,
-        headless: "new",
+        headless: true,
         args: puppeteerArgs,
         ignoreHTTPSErrors: true,
       });
@@ -45,6 +48,7 @@ async function startBrowser() {
     }
   }
 }
+
 
 
 
