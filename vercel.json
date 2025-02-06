@@ -6,7 +6,13 @@
     }
   ],
   "env": {
-    "PLAYWRIGHT_BROWSERS_PATH": "/tmp/playwright"  
+    "PLAYWRIGHT_BROWSERS_PATH": "/tmp/playwright"
+  },
+  "functions": {
+    "api/*": {
+      "memory": 1024,
+      "maxDuration": 15
+    }
   },
   "routes": [
     {

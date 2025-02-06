@@ -1,6 +1,5 @@
 const express = require("express");
-const { chromium } = require('playwright-aws-lambda');
-const playwrightAwsLambda = require("playwright-aws-lambda");
+const playwrightAwsLambda = require("playwright-aws-lambda"); // Correct import for playwright-aws-lambda
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
@@ -14,16 +13,25 @@ let browser;
 
 // Start Playwright Browser
 async function startBrowser() {
-  let browser;
-  try {
-    console.log("🔄 Launching Playwright...");
-    browser = await chromium.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-    });
-    console.log("✅ Playwright launched successfully.");
-  } catch (error) {
-    console.error("❌ Error launching Playwright:", error);
+  if (!browser) {
+    try {
+      console.log("🔄 Launching Playwright...");
+      
+      // Use playwright-aws-lambda's launchChromium method for proper browser launch
+      browser = await playwrightAwsLambda.launchChromium({
+        headless: true,
+        args: [
+          "--no-sandbox", 
+          "--disable-setuid-sandbox", 
+          "--disable-dev-shm-usage"
+        ],
+      });
+      
+      console.log("✅ Playwright launched successfully.");
+    } catch (error) {
+      console.error("❌ Error launching Playwright:", error);
+      browser = null;
+    }
   }
   return browser;
 }
