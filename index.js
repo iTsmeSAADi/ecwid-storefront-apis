@@ -1,5 +1,5 @@
 const express = require("express");
-const playwrightAwsLambda = require("playwright-aws-lambda"); // Correct import for playwright-aws-lambda
+const { chromium } = require("playwright");  // Use regular playwright
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
@@ -16,17 +16,10 @@ async function startBrowser() {
   if (!browser) {
     try {
       console.log("🔄 Launching Playwright...");
-      
-      // Use playwright-aws-lambda's launchChromium method for proper browser launch
-      browser = await playwrightAwsLambda.launchChromium({
+      browser = await chromium.launch({
         headless: true,
-        args: [
-          "--no-sandbox", 
-          "--disable-setuid-sandbox", 
-          "--disable-dev-shm-usage"
-        ],
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
       });
-      
       console.log("✅ Playwright launched successfully.");
     } catch (error) {
       console.error("❌ Error launching Playwright:", error);
@@ -35,6 +28,7 @@ async function startBrowser() {
   }
   return browser;
 }
+
 
 // Function to run JavaScript in the storefront console
 async function executeStorefrontScript(data) {
