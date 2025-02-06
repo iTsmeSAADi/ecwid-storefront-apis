@@ -21,8 +21,16 @@ async function startBrowser() {
       const isServerless = !!process.env.VERCEL_ENV || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
       if (isServerless) {
-        browser = await playwrightAwsLambda.launchChromium();
+        // Launch using playwright-aws-lambda for serverless environments
+        browser = await playwrightAwsLambda.launchChromium({
+          args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage',
+          ],
+        });
       } else {
+        // Launch locally or on a custom server with Chromium
         browser = await chromium.launch({
           headless: true,
           args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
