@@ -21,13 +21,21 @@ async function startBrowser() {
     try {
       console.log("🔄 Launching Puppeteer...");
 
-      const puppeteer = require("puppeteer-core"); // Use puppeteer-core
-      const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // CHANGE THIS if needed!
+      let executablePath;
+      let puppeteerArgs = ["--no-sandbox", "--disable-setuid-sandbox"];
+
+      if (process.env.VERCEL) {
+        const chromium = require("chrome-aws-lambda");
+        executablePath = await chromium.executablePath;
+        puppeteerArgs.push("--disable-dev-shm-usage");
+      } else {
+        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Change if needed
+      }
 
       browser = await puppeteer.launch({
         executablePath,
         headless: "new",
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: puppeteerArgs,
         ignoreHTTPSErrors: true,
       });
 
@@ -37,6 +45,7 @@ async function startBrowser() {
     }
   }
 }
+
 
 
 
