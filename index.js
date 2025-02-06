@@ -1,5 +1,5 @@
 const express = require("express");
-const { chromium } = require("playwright");
+const { chromium } = require('playwright-aws-lambda');
 const playwrightAwsLambda = require("playwright-aws-lambda");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -14,34 +14,16 @@ let browser;
 
 // Start Playwright Browser
 async function startBrowser() {
-  if (!browser) {
-    try {
-      console.log("🔄 Launching Playwright...");
-      
-      const isServerless = !!process.env.VERCEL_ENV || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-
-      if (isServerless) {
-        // Launch using playwright-aws-lambda for serverless environments
-        browser = await playwrightAwsLambda.launchChromium({
-          args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox', 
-            '--disable-dev-shm-usage',
-          ],
-        });
-      } else {
-        // Launch locally or on a custom server with Chromium
-        browser = await chromium.launch({
-          headless: true,
-          args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-        });
-      }
-
-      console.log("✅ Playwright launched successfully.");
-    } catch (error) {
-      console.error("❌ Error launching Playwright:", error);
-      browser = null;
-    }
+  let browser;
+  try {
+    console.log("🔄 Launching Playwright...");
+    browser = await chromium.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    });
+    console.log("✅ Playwright launched successfully.");
+  } catch (error) {
+    console.error("❌ Error launching Playwright:", error);
   }
   return browser;
 }
