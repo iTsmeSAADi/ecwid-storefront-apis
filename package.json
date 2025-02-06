@@ -20,7 +20,7 @@
   "scripts": {
     "start": "node index",
     "dev": "nodemon index",
-    "postinstall": "npx playwright install chromium"
+    "postinstall": "npx playwright install"
   },
   "keywords": [],
   "author": "",
