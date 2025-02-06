@@ -23,15 +23,14 @@ async function startBrowser() {
       console.log("🔄 Launching Puppeteer...");
 
       const isServerless = !!process.env.VERCEL_ENV || !!process.env.NOW_REGION || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-      
       let executablePath;
-      let puppeteerArgs = ["--no-sandbox", "--disable-setuid-sandbox"];
+      let puppeteerArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"];
 
       if (isServerless) {
         executablePath = await chromium.executablePath;
-        puppeteerArgs.push("--single-process"); // Fixes ETXTBSY error
+        puppeteerArgs.push("--single-process");
       } else {
-        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // Local Dev
+        executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
       }
 
       browser = await puppeteer.launch({
@@ -44,7 +43,7 @@ async function startBrowser() {
       console.log("✅ Puppeteer launched successfully.");
     } catch (error) {
       console.error("❌ Error launching Puppeteer:", error);
-      browser = null; // Ensure we reset if it fails
+      browser = null; 
     }
   }
   return browser;
