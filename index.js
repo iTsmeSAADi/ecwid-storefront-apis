@@ -18,7 +18,9 @@ async function startBrowser() {
       console.log("🔄 Launching Playwright...");
       browser = await chromium.launch({
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        // Point to the correct browser installation path
+        executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
       });
       console.log("✅ Playwright launched successfully.");
     } catch (error) {
@@ -28,7 +30,6 @@ async function startBrowser() {
   }
   return browser;
 }
-
 
 // Function to run JavaScript in the storefront console
 async function executeStorefrontScript(data) {
