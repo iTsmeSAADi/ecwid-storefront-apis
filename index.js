@@ -18,7 +18,7 @@ async function startBrowser() {
       console.log("🔄 Launching Playwright...");
       browser = await chromium.launch({
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
       });
       console.log("✅ Playwright launched successfully.");
     } catch (error) {
