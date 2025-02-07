@@ -10,5 +10,8 @@
       "src": "/(.*)",
       "dest": "/index.js"
     }
-  ]
+  ],
+  "env": {
+    "PLAYWRIGHT_BROWSERS_PATH": "0"
+  }
 }
